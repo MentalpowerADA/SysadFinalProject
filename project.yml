@@ -1,0 +1,47 @@
+---
+- hosts: department
+  connection: network_cli
+  become: true
+  roles:
+    -  Rdept 
+
+- hosts: public
+  connection: network_cli
+  become: true
+  roles: 
+    -  Rpub
+
+- hosts: security
+  connection: network_cli
+  become: true
+  roles: 
+    -  Rsec
+
+- hosts: security_switch
+  connection: network_cli
+  become: true
+  roles: 
+    -  Seng
+
+- hosts: vp_switch
+  connection: network_cli
+  become: true
+  roles: 
+    -  Sprod
+
+- hosts: salessw
+  connection: network_cli
+  become: true
+  roles: 
+    -  Ssale 
+
+- hosts: security_switch
+  connection: network_cli
+  become: true
+  roles: 
+    -  Ssec 
+
+ 
+ 
+ 
+ 

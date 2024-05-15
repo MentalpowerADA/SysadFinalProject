@@ -1,0 +1,431 @@
+ Serial Ports
+192.168.1.0 /30 Department - Security
+192.168.2.0 /30 Security - Public
+192.168.3.0 /30 Public - Department
+
+Security Router
+192.168.1.2 /30 Department Router
+192.168.2.1 /30 Public Router
+192.168.4.1 /29 Admin & SecServer
+192.168.5.1 /30 Data Server
+Gig0/0/0 - Admin & SecServer
+Gig0/0/1 - Data Server
+
+en
+conf t 
+hostname Security
+enable secret admin
+no ip domain lookup
+service password-encryption
+line con 0
+password admin
+login
+line vty 0 15
+password admin
+login
+exit
+
+int se0/1/0
+ip add 192.168.2.1 255.255.255.252
+clock rate 9600
+no shut
+int se0/1/1
+ip add 192.168.1.2 255.255.255.252
+no shut
+int fa0/0
+ip add 192.168.4.1 255.255.255.248
+no shut
+int fa0/1
+ip add 192.168.5.1 255.255.255.252
+no shut
+exit
+
+ip dhcp excluded-address 192.168.1.2
+ip dhcp excluded-address 192.168.2.1
+ip dhcp excluded-address 192.168.4.1
+ip dhcp excluded-address 192.168.4.2
+ip dhcp excluded-address 192.168.5.1
+
+ip dhcp pool Security
+network 192.168.4.0 255.255.255.248
+default-router 192.168.4.1
+exit
+
+ip dhcp pool Data
+network 192.168.5.0 255.255.255.252
+default-router 192.168.5.1
+exit
+
+router ospf 100
+network 192.168.1.0 0.0.0.3 area 0
+network 192.168.2.0 0.0.0.3 area 0
+network 192.168.5.0 0.0.0.3 area 0
+network 192.168.4.0 0.0.0.7 area 0
+int se0/1/0
+ip ospf 100 area 0
+int se0/1/1
+ip ospf 100 area 0
+int fa0/0
+ip ospf 100 area 0
+int fa0/1
+ip ospf 100 area 0
+exit
+
+ip domain name admin
+crypto key generate rsa
+2048
+enable password admin
+username admin password admin
+ip ssh version 2
+line vty 0 15
+transport input ssh
+login local
+exit
+
+
+ip access extended NOACCESS
+permit ip host 200.200.10.2 any
+deny icmp any any
+permit tcp any any
+permit udp any any
+permit ip any any
+
+int g0/0/0
+ip access-group NOACCESS out
+exit 
+
+ip access-list standard NOPUBLIC
+deny 192.168.9.0 0.0.0.255
+permit any
+
+int g0/0/1
+ip access-group NOPUBLIC out
+exit 
+
+Security Switch
+hostname SecSW
+ip default-gateway 192.168.4.1
+enable secret admin
+no ip domain lookup
+service password-encryption
+line con 0
+password admin
+login
+line vty 0 15
+password admin
+login
+exit
+
+int vlan 1
+ip add 192.168.4.2 255.255.255.248
+no shutdown
+exit
+
+ip domain name admin
+crypto key generate rsa
+2048
+enable password admin
+username admin password admin
+ip ssh version 2
+line vty 0 15
+transport input ssh
+login local
+exit
+
+ip access-list extended ssh
+permit tcp host 192.168.4.3 any eq 22
+deny tcp any any eq 22
+permit ip any any
+exit
+
+line vty 0 15
+access-class ssh in
+exit
+
+
+Department Router
+
+192.168.1.1 /30 Security Router
+192.168.3.2 /30 Public Router
+192.168.6.1 /24 Video Production
+192.168.7.1 /24 Engineering
+192.168.8.1 /24 Sales
+
+Se0/1/0 - Security Router
+Se0/1/1 - Public Router
+Gig0/0/0 - Video Production
+Gig0/0/1 - Engineering
+Gig0/0/2 - Sales
+
+en
+conf t 
+hostname Department
+enable secret admin
+no ip domain lookup
+service password-encryption
+line con 0
+password admin
+login
+line vty 0 15
+password admin
+login
+exit
+
+int se0/1/0
+ip add 192.168.1.1 255.255.255.252
+clock rate 9600
+no shut
+int se0/1/1
+ip add 192.168.3.2 255.255.255.252
+no shut
+int fa0/0
+ip add 192.168.6.1 255.255.255.0
+no shut
+int fa0/1
+ip add 192.168.7.1 255.255.255.0
+no shut
+int fa0/2
+ip add 192.168.8.1 255.255.255.0
+no shut
+exit
+
+ip dhcp excluded-address 192.168.1.1
+ip dhcp excluded-address 192.168.3.1
+ip dhcp excluded-address 192.168.6.1
+ip dhcp excluded-address 192.168.6.2
+ip dhcp excluded-address 192.168.7.1
+ip dhcp excluded-address 192.168.7.2
+ip dhcp excluded-address 192.168.8.1
+ip dhcp excluded-address 192.168.8.2
+
+ip dhcp pool VP
+network 192.168.6.0 255.255.255.0
+default-router 192.168.6.1
+ip dhcp pool Eng
+network 192.168.7.0 255.255.255.0
+default-router 192.168.7.1
+ip dhcp pool Sales
+network 192.168.8.0 255.255.255.0
+default-router 192.168.8.1
+exit
+
+router ospf 100
+network 192.168.1.0 0.0.0.3 area 0
+network 192.168.3.0 0.0.0.3 area 0
+network 192.168.6.0 0.0.0.255 area 0
+network 192.168.7.0 0.0.0.255 area 0
+network 192.168.8.0 0.0.0.255 area 0
+int se0/1/0
+ip ospf 100 area 0
+int se0/1/1
+ip ospf 100 area 0
+int fa0/0
+ip ospf 100 area 0
+int fa0/1
+ip ospf 100 area 0
+int fa0/2
+ip ospf 100 area 0
+exit
+
+ip domain name admin
+crypto key generate rsa
+2048
+enable password admin
+username admin password admin
+ip ssh version 2
+line vty 0 15
+transport input ssh
+login local
+exit
+
+ip access-list extended ADMIN
+permit ip host 200.200.10.2 any
+permit ip 192.168.4.0 0.0.0.7 any
+permit ip 192.168.5.0 0.0.0.3 any
+deny ip any any
+exit
+
+ip access-list extended NOACCESS
+deny tcp any 192.168.4.0 0.0.0.7 eq 25
+deny tcp any 192.168.4.0 0.0.0.7 eq 53
+deny tcp any 192.168.4.0 0.0.0.7 eq 80
+deny tcp any 192.168.4.0 0.0.0.7 eq 123
+deny tcp any 192.168.4.0 0.0.0.7 eq 443
+deny udp any 192.168.4.0 0.0.0.7 eq 53
+deny udp any 192.168.4.0 0.0.0.7 eq 161
+deny udp any 192.168.4.0 0.0.0.7 eq 162
+permit ip any any
+exit
+
+int fa0/0
+ip access-group ADMIN out
+ip access-group NOACCESS in
+int fa0/1
+ip access-group ADMIN out
+ip access-group NOACCESS in
+int fa0/2
+ip access-group ADMIN out
+ip access-group NOACCESS in
+exit
+
+VP, Eng, Sales Switch
+hostname VPSW
+ip default-gateway 192.168.6.1
+
+hostname EngSW
+ip default-gateway 192.168.7.1
+
+hostname SalesSW
+ip default-gateway 192.168.8.1
+
+enable secret admin
+no ip domain lookup
+service password-encryption
+line con 0
+password admin
+login
+line vty 0 15
+password admin
+login
+exit
+
+VP
+int vlan 1
+ip add 192.168.6.2 255.255.255.0
+no shutdown
+exit
+
+Eng
+int vlan 1
+ip add 192.168.7.2 255.255.255.0
+no shutdown
+exit
+
+Sales
+int vlan 1
+ip add 192.168.8.2 255.255.255.0
+no shutdown
+exit
+
+ip domain name admin
+crypto key generate rsa
+2048
+enable password admin
+username admin password admin
+ip ssh version 2
+line vty 0 15
+transport input ssh
+login local
+exit
+
+ip access-list extended ssh
+permit tcp host 192.168.4.3 any eq 22
+deny tcp any any eq 22
+permit ip any any
+exit
+
+line vty 0 15
+access-class ssh in
+exit
+
+Public Router
+192.168.3.1 /30 Department Router
+192.168.2.2 /30 Security Router
+192.168.9.1 /24 Public Use
+200.200.10.1 /30 Internet
+
+Se0/1/0 - Department Router
+Se0/1/1 - Security Router
+Gig0/0/0 - Internet
+Gig0/0/1 - Public Use
+
+en
+conf t 
+hostname Public
+enable secret admin
+no ip domain lookup
+service password-encryption
+line con 0
+password admin
+login
+line vty 0 15
+password admin
+login
+exit
+
+int se0/1/0
+ip add 192.168.3.1 255.255.255.252
+clock rate 9600
+no shut
+int se0/1/1
+ip add 192.168.2.2 255.255.255.252
+no shut
+int fa0/0
+ip add 200.200.10.1 255.255.255.252
+no shut
+int fa0/1
+ip add 192.168.9.1 255.255.255.0
+no shut
+exit
+
+ip dhcp excluded-address 192.168.3.1
+ip dhcp excluded-address 192.168.2.2
+ip dhcp excluded-address 200.200.10.1
+ip dhcp excluded-address 192.168.9.1
+
+ip dhcp pool Public
+network 192.168.9.0 255.255.255.0
+default-router 192.168.9.1
+exit
+
+router ospf 100
+network 192.168.3.0 0.0.0.3 area 0
+network 192.168.2.0 0.0.0.3 area 0
+network 192.168.9.0 0.0.0.255 area 0
+network 200.200.10.0 0.0.0.3 area 0
+int se0/1/0
+ip ospf 100 area 0
+int se0/1/1
+ip ospf 100 area 0
+int fa0/0
+ip ospf 100 area 0
+int fa0/1
+ip ospf 100 area 0
+exit
+
+ip domain name admin
+crypto key generate rsa
+2048
+enable password admin
+username admin password admin
+ip ssh version 2
+line vty 0 15
+transport input ssh
+login local
+exit
+
+ip access extended NOPUBLICACCESS
+permit ip 192.168.9.0 0.0.0.255 host 200.200.10.2
+deny tcp any any eq 22
+deny tcp any any eq 25
+deny tcp any any eq 53
+deny tcp any any eq 80
+deny tcp any any eq 123
+deny tcp any any eq 443
+deny udp any any eq 53
+deny udp any any eq 161
+deny udp any any eq 162
+permit ip any any
+exit
+
+int fa0/1
+ip access-group N0PUBLICACCESS in
+exit
+
+
+
+
+
+
+
+
