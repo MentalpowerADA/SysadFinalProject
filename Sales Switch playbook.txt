@@ -1,0 +1,91 @@
+---
+- hosts: SalesSW
+  connection: network_cli
+  become: true
+  gather_facts: no
+  tasks:
+
+  - name: hostname SalesSW
+    ios_config:
+      lines:
+        - hostname SalesSW
+      save_when: modified
+    become: yes
+    become_method: enable
+
+  - name: ip default-gateway 192.168.8.1
+    ios_config:
+      lines:
+        - ip default-gateway 192.168.8 .1
+      save_when: modified
+    become: yes
+    become_method: enable
+
+  - name: enable secret admin
+    ios_config:
+      lines:
+        - enable secret admin
+      save_when: modified
+    become: yes
+    become_method: enable
+
+  - name: no ip domain lookup
+    ios_config:
+      lines:
+        - no ip domain lookup
+      save_when: modified
+    become: yes
+    become_method: enable
+
+  - name: service password-encryption
+    ios_config:
+      lines:
+        - service password-encryption
+      save_when: modified
+    become: yes
+    become_method: enable
+
+  - name: line console 0
+    ios_config:
+      lines:
+        - password admin
+        - logih
+      parents:
+        - line console 0
+      save_when: modified
+    become: yes
+    become_method: enable
+
+  - name: line vty 0 15
+    ios_config:
+      lines:
+        - password admin
+        - login
+      parents:
+        - line vty 0 15
+      save_when: modified
+    become: yes
+    become_method: enable
+
+  - name: ip access-list extended ssh
+    ios_config:
+      lines:
+        - permit tcp host 192.168.4.3 any eq 22
+        - deny tcp any any eq 22
+        - permit ip any any
+      parents:
+        - ip access-list extended ssh
+      save_when: modified
+    become: yes
+    become_method: enable
+
+  - name: ip access-class ssh in
+    ios_config:
+      lines: []
+      parents:
+        - line vty 0 15
+      parents_lines:
+        - ip access-class ssh in
+      save_when: modified
+    become: yes
+    become_method: enable
